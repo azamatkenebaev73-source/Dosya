@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Для Балерке</title>
+<style>
+  :root {
+    --night: #2a1038;
+    --plum: #4a1d5c;
+    --rose: #ff7a9c;
+    --blush: #ffd6e0;
+    --gold: #ffd98a;
+    --paper: #fff7f3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    color: var(--paper);
+    background: radial-gradient(ellipse at 50% 120%, #8a2d6b 0%, var(--plum) 40%, var(--night) 100%);
+    overflow-x: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 100%;
+  }
+  .stars, .hearts { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .star {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: var(--gold); opacity: .6;
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle { 0%,100% { opacity: .15; } 50% { opacity: .9; } }
+  .heart {
+    position: absolute; bottom: -40px; color: var(--rose);
+    animation: floatUp linear forwards;
+  }
+  @keyframes floatUp {
+    to { transform: translateY(-115vh) rotate(25deg); opacity: 0; }
+  }
+  main { position: relative; z-index: 2; width: 100%; max-width: 560px; text-align: center; }
+
+  #start { transition: opacity .6s ease, transform .6s ease; }
+  #start.gone { opacity: 0; transform: scale(.9); pointer-events: none; position: absolute; inset: 0; }
+  .envelope { font-size: 84px; display: block; margin-bottom: 18px; animation: bob 2.6s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-10px); } }
+  #start p { font-style: italic; font-size: 20px; color: var(--blush); margin-bottom: 30px; }
+
+  button {
+    font-family: inherit; font-size: 22px; letter-spacing: .04em;
+    padding: 16px 52px; border: none; border-radius: 999px; cursor: pointer;
+    color: #4a1030; background: linear-gradient(135deg, var(--gold), var(--rose));
+    box-shadow: 0 0 0 0 rgba(255,122,156,.6), 0 10px 30px rgba(0,0,0,.35);
+    animation: pulse 2s infinite; transition: transform .2s;
+  }
+  button:hover { transform: scale(1.06); }
+  button:focus-visible { outline: 3px solid var(--paper); outline-offset: 4px; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 22px rgba(255,122,156,0), 0 10px 30px rgba(0,0,0,.35); } 100% { box-shadow: 0 0 0 0 rgba(255,122,156,0), 0 10px 30px rgba(0,0,0,.35); } }
+
+  #card {
+    display: none;
+    padding: 44px 30px;
+    border-radius: 28px;
+    background: rgba(255,247,243,.08);
+    border: 1px solid rgba(255,214,224,.35);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  #card.show { display: block; animation: appear 1s ease both; }
+  @keyframes appear { from { opacity: 0; transform: translateY(30px) scale(.95); } }
+  #card h1 { font-size: clamp(32px, 8vw, 46px); font-weight: normal; color: var(--gold); margin-bottom: 24px; font-style: italic; }
+  #card .text { font-size: clamp(18px, 4.6vw, 22px); line-height: 1.7; color: var(--paper); }
+  #card .text span { opacity: 0; transition: opacity 1s ease; display: inline; }
+  #card .text span.on { opacity: 1; }
+  #card .question { display: block; margin-top: 22px; font-size: clamp(24px, 6.4vw, 32px); color: var(--rose); font-style: italic; }
+  .answers { margin-top: 32px; display: none; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .answers.show { display: flex; animation: appear .8s ease both; }
+  .answers button { animation: none; font-size: 20px; padding: 14px 38px; }
+  #no { background: rgba(255,247,243,.15); color: var(--paper); box-shadow: none; position: relative; }
+  #yes-msg { display: none; margin-top: 24px; font-size: 26px; color: var(--gold); font-style: italic; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="hearts" id="hearts"></div>
+
+<main>
+  <div id="start">
+    <span class="envelope">💌</span>
+    <p>Для тебя есть кое-что важное…</p>
+    <button id="open">Нажми</button>
+  </div>
+
+  <section id="card" aria-live="polite">
+    <h1>Балерке</h1>
+    <div class="text" id="text"></div>
+    <div class="answers" id="answers">
+      <button id="yes">Да 💖</button>
+      <button id="no">Подумаю</button>
+    </div>
+    <div id="yes-msg">Ты сделала меня самым счастливым ✨</div>
+  </section>
+</main>
+
+<script>
+  // звёзды
+  const stars = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = Math.random() * 3 + 's';
+    stars.appendChild(s);
+  }
+
+  // летящие сердечки
+  const hearts = document.getElementById('hearts');
+  function spawnHeart() {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = ['❤', '💗', '💖', '♥'][Math.floor(Math.random() * 4)];
+    h.style.left = Math.random() * 100 + '%';
+    h.style.fontSize = (14 + Math.random() * 26) + 'px';
+    h.style.animationDuration = (5 + Math.random() * 5) + 's';
+    hearts.appendChild(h);
+    setTimeout(() => h.remove(), 10500);
+  }
+  let timer = null;
+  function startHearts(rate) { clearInterval(timer); timer = setInterval(spawnHeart, rate); }
+
+  const lines = [
+    'Балерке, ты мне действительно очень нравишься.',
+    'Ты стала для меня особенным человеком.',
+    'Я хочу, чтобы ты была моей единственной и неповторимой половиной.'
+  ];
+  const question = 'Будешь со мной?';
+
+  document.getElementById('open').addEventListener('click', () => {
+    document.getElementById('start').classList.add('gone');
+    const card = document.getElementById('card');
+    card.classList.add('show');
+    startHearts(500);
+
+    const box = document.getElementById('text');
+    const all = [...lines.map(t => t + ' '), question];
+    all.forEach((t, i) => {
+      const sp = document.createElement('span');
+      if (i === all.length - 1) {
+        const q = document.createElement('b');
+        q.className = 'question';
+        q.style.fontWeight = 'normal';
+        q.textContent = t;
+        sp.appendChild(q);
+        sp.style.display = 'block';
+      } else sp.textContent = t;
+      box.appendChild(sp);
+      setTimeout(() => sp.classList.add('on'), 900 + i * 1800);
+    });
+    setTimeout(() => document.getElementById('answers').classList.add('show'), 900 + all.length * 1800);
+  });
+
+  document.getElementById('yes').addEventListener('click', () => {
+    document.getElementById('answers').style.display = 'none';
+    document.getElementById('yes-msg').style.display = 'block';
+    startHearts(60);
+  });
+
+  // кнопка «Подумаю» убегает
+  const no = document.getElementById('no');
+  function dodge() {
+    no.style.transform = `translate(${(Math.random() - .5) * 160}px, ${(Math.random() - .5) * 90}px)`;
+  }
+  no.addEventListener('mouseenter', dodge);
+  no.addEventListener('click', e => { e.preventDefault(); dodge(); });
+  no.addEventListener('touchstart', e => { e.preventDefault(); dodge(); });
+</script>
+</body>
+</html>
